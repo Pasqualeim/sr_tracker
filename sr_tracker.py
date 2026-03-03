@@ -8,6 +8,21 @@ import threading
 
 import psycopg  # pip install psycopg[binary]
 import requests  # pip install requests
+from dotenv import load_dotenv  # pip install python-dotenv
+import getpass
+
+# Carica variabili da file .env se presente
+load_dotenv()
+
+# Se la password del DB non è impostata nelle env, chiedila all'utente al runtime
+# (evita di mettere la password in chiaro nel codice/repo)
+if not os.environ.get("SRDB_PASS"):
+    try:
+        pw = getpass.getpass(prompt="DB password (SRDB_PASS) (inserisci e premi invio): ")
+        if pw:
+            os.environ["SRDB_PASS"] = pw
+    except Exception:
+        pass
 
 APP_NAME = "SAP SR Tracker"
 APP_VERSION = "0.3.0"  # aggiorna quando fai release/tag su GitHub
