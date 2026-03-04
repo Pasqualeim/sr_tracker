@@ -8,28 +8,13 @@ import threading
 
 import psycopg  # pip install psycopg[binary]
 import requests  # pip install requests
-from dotenv import load_dotenv  # pip install python-dotenv
-import getpass
-
-# Carica variabili da file .env se presente
-load_dotenv()
-
-# Se la password del DB non è impostata nelle env, chiedila all'utente al runtime
-# (evita di mettere la password in chiaro nel codice/repo)
-if not os.environ.get("SRDB_PASS"):
-    try:
-        pw = getpass.getpass(prompt="DB password (SRDB_PASS) (inserisci e premi invio): ")
-        if pw:
-            os.environ["SRDB_PASS"] = pw
-    except Exception:
-        pass
 
 APP_NAME = "SAP SR Tracker"
 APP_VERSION = "0.3.0"  # aggiorna quando fai release/tag su GitHub
 
 # === GitHub repo (per update check) ===
-GITHUB_OWNER = "TUO_OWNER"   # es. "mario-rossi"
-GITHUB_REPO  = "TUO_REPO"    # es. "sap-sr-tracker"
+GITHUB_OWNER = "Pasqualeim"   # es. "mario-rossi"
+GITHUB_REPO  = "sr_tracker"    # es. "sap-sr-tracker"
 GITHUB_RELEASES_URL = f"https://github.com/{GITHUB_OWNER}/{GITHUB_REPO}/releases/latest"
 GITHUB_LATEST_API = f"https://api.github.com/repos/{GITHUB_OWNER}/{GITHUB_REPO}/releases/latest"
 
@@ -325,7 +310,7 @@ class SRTrackerApp(tk.Tk):
 
         # Cliente: combobox con "Tutti" o valore esatto
         if f_cliente and f_cliente != "Tutti":
-            q += " and cliente = %s"
+            q += " and cliente ilike %s"
             p.append(f_cliente)
 
         # ILIKE = case-insensitive match [web:338]
