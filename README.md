@@ -14,7 +14,7 @@ Tool desktop Windows per tracciare SR SAP per cliente (con link e descrizione) u
 - Accesso internet verso Supabase (porta 5432 verso `*.pooler.supabase.com`)
 
 ## Prima configurazione (1 minuto)
-Il tool legge la configurazione DB da variabili d’ambiente Windows (così la password non è dentro l’eseguibile).
+Il tool legge la configurazione DB da variabili d’ambiente Windows (così la password non è dentro l’eseguibile) (da chiedere a Pasquale).
 
 Apri **cmd** e incolla:
 
