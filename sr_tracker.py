@@ -1,4 +1,5 @@
 import os
+import sys
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 import csv
@@ -22,6 +23,14 @@ CLIENTI = sorted([
     "Fastweb", "Ansaldo", "Ansaldo UK", "BMC", "Dedem", "Magnaghi",
     "Giesse", "LaDoria", "UCA", "Lamberti", "Carraro", "CNP", "Damiano",
 ], key=str.lower)
+
+
+def resource_path(relative_path):
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
 
 
 # === DB config via Environment Variables (no password in chiaro) ===
@@ -72,6 +81,7 @@ class SRTrackerApp(tk.Tk):
         self.title(f"{APP_NAME} (v{APP_VERSION})")
         self.geometry("1220x720")
         self.minsize(1000, 620)
+        self.iconbitmap(resource_path("app_icon.ico"))
 
         self._build_ui()
         self.refresh_tree()
@@ -487,7 +497,6 @@ class SRTrackerApp(tk.Tk):
             current = _parse_version(APP_VERSION)
 
             if latest == (0, 0, 0):
-                # Tag non interpretabile (es. nessuna release)
                 if not silent_when_up_to_date:
                     messagebox.showinfo("Aggiornamenti", "Impossibile determinare la versione latest su GitHub.")
                 return
@@ -503,7 +512,6 @@ class SRTrackerApp(tk.Tk):
                     messagebox.showinfo("Aggiornamenti", f"Sei aggiornato (v{APP_VERSION}).")
 
         def on_error(e: Exception):
-            # All'avvio: segnala solo con un messaggio corto (così capisci se la rete blocca GitHub)
             messagebox.showwarning("Aggiornamenti", f"Check aggiornamenti non riuscito: {e}")
 
         self.run_task(task, on_success=ok, on_error=on_error, on_error_title="Errore aggiornamenti", busy_msg="Controllo aggiornamenti...")
@@ -512,3 +520,4 @@ class SRTrackerApp(tk.Tk):
 if __name__ == "__main__":
     app = SRTrackerApp()
     app.mainloop()
+
