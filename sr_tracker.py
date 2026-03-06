@@ -10,11 +10,15 @@ import psycopg  # pip install psycopg[binary]
 import requests  # pip install requests
 
 APP_NAME = "SAP SR Tracker"
+<<<<<<< HEAD
 APP_VERSION = "0.3.5"  # aggiorna quando fai release/tag su GitHub
+=======
+APP_VERSION = "0.3.4"  # aggiorna quando fai release/tag su GitHub (es. 0.3.4)
+>>>>>>> 773cda0e8fbcf6602fc580c9caa762f738587fc0
 
 # === GitHub repo (per update check) ===
-GITHUB_OWNER = "Pasqualeim"   # es. "mario-rossi"
-GITHUB_REPO  = "sr_tracker"    # es. "sap-sr-tracker"
+GITHUB_OWNER = "Pasqualeim"
+GITHUB_REPO = "sr_tracker"
 GITHUB_RELEASES_URL = f"https://github.com/{GITHUB_OWNER}/{GITHUB_REPO}/releases/latest"
 GITHUB_LATEST_API = f"https://api.github.com/repos/{GITHUB_OWNER}/{GITHUB_REPO}/releases/latest"
 
@@ -23,6 +27,7 @@ CLIENTI = sorted([
     "Giesse", "LaDoria", "UCA", "Lamberti", "Carraro", "CNP", "Damiano",
 ], key=str.lower)
 
+
 # === DB config via Environment Variables (no password in chiaro) ===
 def _env(name: str, default=None, required=False):
     v = os.environ.get(name, default)
@@ -30,11 +35,13 @@ def _env(name: str, default=None, required=False):
         raise RuntimeError(f"Variabile d'ambiente mancante: {name}")
     return v
 
+
 DB_USER = _env("SRDB_USER", required=True)
 DB_PASS = _env("SRDB_PASS", required=True)
 DB_HOST = _env("SRDB_HOST", required=True)
 DB_PORT = int(_env("SRDB_PORT", "5432"))
 DB_NAME = _env("SRDB_NAME", "postgres")
+
 
 def db_connect():
     return psycopg.connect(
@@ -47,21 +54,21 @@ def db_connect():
         sslmode="require",
     )
 
+
 def _parse_version(v: str):
-    # accetta "v1.2.3" o "1.2.3"
+    # accetta "v1.2.3" o "1.2.3" (confronto solo MAJOR.MINOR.PATCH)
     v = (v or "").strip()
     if v.startswith("v"):
         v = v[1:]
     parts = v.split(".")
     out = []
     for p in parts:
-        try:
-            out.append(int("".join([c for c in p if c.isdigit()]) or "0"))
-        except Exception:
-            out.append(0)
+        digits = "".join([c for c in p if c.isdigit()])
+        out.append(int(digits or "0"))
     while len(out) < 3:
         out.append(0)
     return tuple(out[:3])
+
 
 class SRTrackerApp(tk.Tk):
     def __init__(self):
@@ -72,6 +79,9 @@ class SRTrackerApp(tk.Tk):
 
         self._build_ui()
         self.refresh_tree()
+
+        # Check aggiornamenti automatico: popup solo se serve (o errore).
+        self.after(1500, lambda: self.check_updates(silent_when_up_to_date=True))
 
     # ---------- Busy/progress + threading ----------
     def set_busy(self, busy: bool, msg: str = "Operazione in corso..."):
@@ -86,13 +96,13 @@ class SRTrackerApp(tk.Tk):
             self._set_buttons_state("normal")
 
     def _set_buttons_state(self, state: str):
-        for b in (self.btn_add, self.btn_upd, self.btn_del, self.btn_csv, self.btn_filter, self.btn_reset, self.btn_updates):
+        for b in (self.btn_add, self.btn_upd, self.btn_del, self.btn_csv, self.btn_filter, self.btn_reset, self.btn_clear):
             try:
                 b.config(state=state)
             except Exception:
                 pass
 
-    def run_task(self, task_func, on_success=None, on_error_title="Errore", busy_msg="Operazione in corso..."):
+    def run_task(self, task_func, on_success=None, on_error=None, on_error_title="Errore", busy_msg="Operazione in corso..."):
         self.set_busy(True, busy_msg)
 
         def worker():
@@ -100,7 +110,9 @@ class SRTrackerApp(tk.Tk):
                 task_func()
                 self.after(0, lambda: (self.set_busy(False), on_success() if on_success else None))
             except Exception as e:
-                self.after(0, lambda: (self.set_busy(False), messagebox.showerror(on_error_title, str(e))))
+                def _default_error():
+                    messagebox.showerror(on_error_title, str(e))
+                self.after(0, lambda: (self.set_busy(False), on_error(e) if on_error else _default_error()))
 
         threading.Thread(target=worker, daemon=True).start()
 
@@ -132,11 +144,11 @@ class SRTrackerApp(tk.Tk):
         ttk.Entry(frm, textvariable=self.var_link, width=96).grid(row=1, column=1, columnspan=5, sticky="we", padx=6, pady=6)
 
         ttk.Label(frm, text="Status").grid(row=2, column=0, sticky="w", padx=6, pady=6)
-        ttk.Combobox(frm, textvariable=self.var_status, values=["Open", "Closed"], width=23, state="readonly")\
+        ttk.Combobox(frm, textvariable=self.var_status, values=["Open", "Closed"], width=23, state="readonly") \
             .grid(row=2, column=1, sticky="w", padx=6, pady=6)
 
         ttk.Label(frm, text="Priorità").grid(row=2, column=2, sticky="w", padx=6, pady=6)
-        ttk.Combobox(frm, textvariable=self.var_prio, values=["H", "M", "L"], width=15, state="readonly")\
+        ttk.Combobox(frm, textvariable=self.var_prio, values=["H", "M", "L"], width=15, state="readonly") \
             .grid(row=2, column=3, sticky="w", padx=6, pady=6)
 
         ttk.Label(frm, text="Descrizione").grid(row=3, column=0, sticky="nw", padx=6, pady=6)
@@ -155,14 +167,12 @@ class SRTrackerApp(tk.Tk):
         self.btn_del = ttk.Button(btns, text="Elimina selezionata", command=self.delete_sr)
         self.btn_csv = ttk.Button(btns, text="Esporta CSV (vista)", command=self.export_csv)
         self.btn_clear = ttk.Button(btns, text="Pulisci form", command=self.clear_form)
-        self.btn_updates = ttk.Button(btns, text="Controlla aggiornamenti", command=self.check_updates)
 
         self.btn_add.pack(side="left", padx=4)
         self.btn_upd.pack(side="left", padx=4)
         self.btn_del.pack(side="left", padx=4)
         self.btn_csv.pack(side="left", padx=12)
         self.btn_clear.pack(side="left", padx=4)
-        self.btn_updates.pack(side="right", padx=4)
 
         # Busy bar
         self.frm_busy = ttk.Frame(self)
@@ -199,7 +209,7 @@ class SRTrackerApp(tk.Tk):
         ttk.Entry(flt, textvariable=self.var_f_aperta_da, width=22).grid(row=0, column=5, sticky="w", padx=6, pady=6)
 
         ttk.Label(flt, text="Status").grid(row=0, column=6, sticky="w", padx=6, pady=6)
-        ttk.Combobox(flt, textvariable=self.var_f_status, values=["Tutti", "Open", "Closed"], width=10, state="readonly")\
+        ttk.Combobox(flt, textvariable=self.var_f_status, values=["Tutti", "Open", "Closed"], width=10, state="readonly") \
             .grid(row=0, column=7, sticky="w", padx=6, pady=6)
 
         self.btn_filter = ttk.Button(flt, text="Applica filtro", command=self.refresh_tree)
@@ -308,12 +318,10 @@ class SRTrackerApp(tk.Tk):
         q = f"select {select_cols} from sr where 1=1"
         p = []
 
-        # Cliente: combobox con "Tutti" o valore esatto
         if f_cliente and f_cliente != "Tutti":
             q += " and cliente ilike %s"
             p.append(f_cliente)
 
-        # ILIKE = case-insensitive match [web:338]
         if f_testo:
             q += " and (sr_numero ilike %s or descrizione ilike %s)"
             p.extend([f"%{f_testo}%", f"%{f_testo}%"])
@@ -466,23 +474,44 @@ class SRTrackerApp(tk.Tk):
         webbrowser.open(link)
 
     # ---------- Updates ----------
-    def check_updates(self):
+    def check_updates(self, silent_when_up_to_date: bool = False):
         def task():
-            r = requests.get(GITHUB_LATEST_API, timeout=6, headers={"Accept": "application/vnd.github+json"})
-            r.raise_for_status()
-            self._latest_tag = (r.json() or {}).get("tag_name", "")
+            headers = {
+                "Accept": "application/vnd.github+json",
+                "User-Agent": f"{GITHUB_REPO}/{APP_VERSION}"
+            }
+            r = requests.get(GITHUB_LATEST_API, timeout=8, headers=headers)
+            if r.status_code != 200:
+                raise RuntimeError(f"GitHub API error {r.status_code}: {r.text[:200]}")
+            self._latest_tag = (r.json() or {}).get("tag_name", "") or ""
 
         def ok():
-            latest = _parse_version(getattr(self, "_latest_tag", ""))
+            latest_tag = getattr(self, "_latest_tag", "") or ""
+            latest = _parse_version(latest_tag)
             current = _parse_version(APP_VERSION)
-            if latest and latest > current:
-                if messagebox.askyesno("Aggiornamento disponibile",
-                                       f"Hai la v{APP_VERSION}. Ultima disponibile: {self._latest_tag}.\n\nAprire la pagina per scaricare la nuova versione?"):
+
+            if latest == (0, 0, 0):
+                # Tag non interpretabile (es. nessuna release)
+                if not silent_when_up_to_date:
+                    messagebox.showinfo("Aggiornamenti", "Impossibile determinare la versione latest su GitHub.")
+                return
+
+            if latest > current:
+                if messagebox.askyesno(
+                    "Aggiornamento disponibile",
+                    f"Hai la v{APP_VERSION}. Ultima disponibile: {latest_tag}.\n\nAprire la pagina per scaricare la nuova versione?"
+                ):
                     webbrowser.open(GITHUB_RELEASES_URL)
             else:
-                messagebox.showinfo("Aggiornamenti", f"Sei aggiornato (v{APP_VERSION}).")
+                if not silent_when_up_to_date:
+                    messagebox.showinfo("Aggiornamenti", f"Sei aggiornato (v{APP_VERSION}).")
 
-        self.run_task(task, on_success=ok, on_error_title="Errore aggiornamenti", busy_msg="Controllo aggiornamenti...")
+        def on_error(e: Exception):
+            # All'avvio: segnala solo con un messaggio corto (così capisci se la rete blocca GitHub)
+            messagebox.showwarning("Aggiornamenti", f"Check aggiornamenti non riuscito: {e}")
+
+        self.run_task(task, on_success=ok, on_error=on_error, on_error_title="Errore aggiornamenti", busy_msg="Controllo aggiornamenti...")
+
 
 if __name__ == "__main__":
     app = SRTrackerApp()
