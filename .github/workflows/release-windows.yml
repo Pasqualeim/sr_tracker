@@ -10,10 +10,13 @@ permissions:
 jobs:
   build-upload:
     runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
@@ -25,14 +28,10 @@ jobs:
 
       - name: Build EXE
         run: |
-          pyinstaller --onefile --noconsole sr_tracker.py --name "SAP-SR-Tracker"
+          pyinstaller --onefile --noconsole --icon app_icon.ico --add-data "app_icon.ico;." sr_tracker.py --name "SAP-SR-Tracker"
 
       - name: Upload EXE to Release
-        uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: dist/SAP-SR-Tracker.exe
-          asset_name: SAP-SR-Tracker.exe
-          asset_content_type: application/octet-stream
+        run: |
+          gh release upload "${{ github.event.release.tag_name }}" "dist/SAP-SR-Tracker.exe" --clobber
