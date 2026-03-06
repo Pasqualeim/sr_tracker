@@ -10,11 +10,7 @@ import psycopg  # pip install psycopg[binary]
 import requests  # pip install requests
 
 APP_NAME = "SAP SR Tracker"
-<<<<<<< HEAD
 APP_VERSION = "0.3.5"  # aggiorna quando fai release/tag su GitHub
-=======
-APP_VERSION = "0.3.4"  # aggiorna quando fai release/tag su GitHub (es. 0.3.4)
->>>>>>> 773cda0e8fbcf6602fc580c9caa762f738587fc0
 
 # === GitHub repo (per update check) ===
 GITHUB_OWNER = "Pasqualeim"
