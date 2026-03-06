@@ -41,20 +41,24 @@ def _env(name: str, default=None, required=False):
     return v
 
 
-DB_USER = _env("SRDB_USER", required=True)
-DB_PASS = _env("SRDB_PASS", required=True)
-DB_HOST = _env("SRDB_HOST", required=True)
-DB_PORT = int(_env("SRDB_PORT", "5432"))
-DB_NAME = _env("SRDB_NAME", "postgres")
+def get_db_config():
+    return {
+        "user": _env("SRDB_USER", required=True),
+        "password": _env("SRDB_PASS", required=True),
+        "host": _env("SRDB_HOST", required=True),
+        "port": int(_env("SRDB_PORT", "5432")),
+        "dbname": _env("SRDB_NAME", "postgres"),
+    }
 
 
 def db_connect():
+    cfg = get_db_config()
     return psycopg.connect(
-        user=DB_USER,
-        password=DB_PASS,
-        host=DB_HOST,
-        port=DB_PORT,
-        dbname=DB_NAME,
+        user=cfg["user"],
+        password=cfg["password"],
+        host=cfg["host"],
+        port=cfg["port"],
+        dbname=cfg["dbname"],
         connect_timeout=10,
         sslmode="require",
     )
@@ -520,4 +524,3 @@ class SRTrackerApp(tk.Tk):
 if __name__ == "__main__":
     app = SRTrackerApp()
     app.mainloop()
-
